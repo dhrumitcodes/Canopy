@@ -11,5 +11,7 @@ WORKDIR /app
 RUN useradd --system --create-home appuser
 COPY --from=build /app/target/*.jar app.jar
 USER appuser
+
+ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=65 -XX:+UseSerialGC -XX:TieredStopAtLevel=1"
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]

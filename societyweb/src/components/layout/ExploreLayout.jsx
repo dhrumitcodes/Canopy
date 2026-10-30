@@ -2,6 +2,8 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import Icon from '../common/Icon';
 import Logo from '../common/Logo';
+import { APP_NAME } from '../../config';
+
 
 export default function ExploreLayout() {
     const { user, logout } = useAuth();
@@ -15,7 +17,7 @@ export default function ExploreLayout() {
     return (
         <div className="app">
             <aside className="sidebar">
-                <div className="side-logo"><Logo /> Canopy</div>
+                <div className="side-logo"><Logo /> {APP_NAME}</div>
                 <nav aria-label="Main">
                     <NavLink end to="/discover" className={link}><Icon name="cal" />Events</NavLink>
                     <NavLink to="/discover/societies" className={link}><Icon name="team" />{isAdmin ? 'Societies' : 'Societies'}</NavLink>

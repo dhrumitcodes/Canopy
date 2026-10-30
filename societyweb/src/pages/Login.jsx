@@ -3,6 +3,8 @@ import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import LeafField from '../components/common/LeafField';
 import Logo from '../components/common/Logo';
+import { APP_NAME } from '../config';
+import { useSlowHint } from '../utils/useSlowHint';
 
 export default function Login() {
     const { login, user } = useAuth();
@@ -11,6 +13,7 @@ export default function Login() {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [busy, setBusy] = useState(false);
+    const slow = useSlowHint(busy);
 
     if (user) return <Navigate to="/" replace />;
 
@@ -22,8 +25,9 @@ export default function Login() {
             await login(email, password);
             navigate('/', { replace: true });
         } catch (err) {
-            if (!err.response) setError('Cannot reach the server. Is the backend running?');
+            if (!err.response) setError('Cannot reach the server. If it was idle it may still be waking up: wait a minute and try again.');
             else if (err.response.status === 401 || err.response.status === 403) setError('Invalid email or password');
+            else if (err.response.status === 429) setError(err.response.data?.message || 'Too many attempts. Please wait a few minutes.');
             else setError('Something went wrong. Please try again.');
         } finally {
             setBusy(false);
@@ -33,7 +37,7 @@ export default function Login() {
     return (
         <div className="login">
             <LeafField />
-            <div className="login-brand"><Logo /> Canopy</div>
+            <div className="login-brand"><Logo /> {APP_NAME}</div>
             <section className="login-hero">
                 <h1>Every society on campus, in one place.</h1>
                 <p>Open registrations, run events and keep your members organised, whichever society you lead.</p>
@@ -46,6 +50,7 @@ export default function Login() {
                 <label htmlFor="pw">Password</label>
                 <input id="pw" type="password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} required />
                 {error && <p className="form-error" role="alert">{error}</p>}
+                {busy && slow && <p className="muted" style={{ margin: '12px 0 0' }}>The server is waking up. This can take up to a minute the first time.</p>}
                 <button className="btn-primary" type="submit" disabled={busy}>{busy ? 'Signing in...' : 'Sign in'}</button>
                 <p className="login-foot muted">New here? <Link className="amber-link" to="/register">Create an account</Link></p>
             </form>

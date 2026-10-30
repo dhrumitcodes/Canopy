@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { NAV, roleLabel } from '../../utils/roles';
 import Icon from '../common/Icon';
 import Logo from '../common/Logo';
+import { APP_NAME } from '../../config';
 
 export default function DashboardLayout() {
     const { user, logout } = useAuth();
@@ -24,7 +25,7 @@ export default function DashboardLayout() {
     return (
         <div className="app">
             <aside className="sidebar">
-                <div className="side-logo"><Logo /> Canopy</div>
+                <div className="side-logo"><Logo /> {APP_NAME}</div>
                 <div className="society">
                     <span className="society-mark">{mark}</span>
                     <span>

@@ -1,0 +1,32 @@
+name: Database backup
+
+on:
+  schedule:
+    - cron: "0 21 * * *"   # every day at 21:00 UTC
+  workflow_dispatch:        # lets you run it by hand from the Actions tab
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dump the database
+        env:
+          DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+        run: |
+          docker run --rm -e DATABASE_URL postgres:17-alpine \
+            sh -c 'pg_dump "$DATABASE_URL" --no-owner --format=custom' > backup.dump
+
+      - name: Encrypt the dump
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          gpg --batch --yes --passphrase "$BACKUP_PASSPHRASE" \
+            --symmetric --cipher-algo AES256 -o backup.dump.gpg backup.dump
+          rm backup.dump
+
+      - name: Keep the encrypted backup for 14 days
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-backup-${{ github.run_number }}
+          path: backup.dump.gpg
+          retention-days: 14

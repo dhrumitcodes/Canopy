@@ -41,6 +41,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/actuator/health/liveness", "/actuator/health/readiness").permitAll()
+                        // Societies and events are public to read. Members are not (they contain emails).
                         .requestMatchers(HttpMethod.GET,
                                 "/api/v1/societies", "/api/v1/societies/*",
                                 "/api/v1/societies/*/events", "/api/v1/societies/*/events/*").permitAll()
@@ -53,6 +55,7 @@ public class SecurityConfig {
 
         return http.build();
     }
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
