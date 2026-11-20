@@ -26,13 +26,13 @@ public class MembershipService {
     @Transactional
     public MembershipResponse addMember(Long societyId, AddMemberRequest request) {
         User user = resolveUser(request);
+        if (membershipRepository.existsByUserIdAndSocietyId(user.getId(), societyId)) {
+            throw new IllegalArgumentException("This person is already a member of the society.");
+        }
         Society society = societyRepository.findById(societyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Society not found"));
         if (user.getCollege() == null || !user.getCollege().getId().equals(society.getCollege().getId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Users can only join societies in their own college");
-        }
-        if (membershipRepository.existsByUserIdAndSocietyId(user.getId(), societyId)) {
-            throw new IllegalArgumentException("This person is already a member of the society.");
         }
         Membership membership = Membership.builder()
                 .user(user).society(society).societyRole(SocietyRole.MEMBER).build();
