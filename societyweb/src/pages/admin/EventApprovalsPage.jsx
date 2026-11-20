@@ -3,7 +3,10 @@ import { eventApi } from '../../api/eventApi';
 import { formatDateTime } from '../../utils/formatDate';
 import Loader from '../../components/common/Loader';
 import ErrorMessage from '../../components/common/ErrorMessage';
+import { useAuth } from '../../context/AuthContext';
+import { Navigate } from 'react-router-dom';
 export default function EventApprovalsPage() {
+    const { user } = useAuth();
     const [items, setItems] = useState(null); const [error, setError] = useState(null); const [busy, setBusy] = useState(null);
     const load = useCallback(() => { setError(null); eventApi.getPendingApprovals().then(setItems).catch(setError); }, []);
     useEffect(() => { load(); }, [load]);
@@ -14,6 +17,7 @@ export default function EventApprovalsPage() {
         try { if (approve) await eventApi.approveEvent(event.id); else await eventApi.rejectEvent(event.id, reason.trim()); load(); }
         catch (e) { setError(e); } finally { setBusy(null); }
     };
+    if (user.role !== 'COLLEGE_ADMIN') return <Navigate to="/discover" replace />;
     if (error) return <ErrorMessage error={error} onRetry={load} />;
     if (!items) return <Loader />;
     return <><h1 className="greet">Event approvals</h1><p className="muted greet-sub">Review events submitted by societies in your college.</p>
