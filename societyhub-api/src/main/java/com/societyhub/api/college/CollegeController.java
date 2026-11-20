@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -23,6 +24,7 @@ public class CollegeController {
     private final UserRepository userRepository;
 
     @PostMapping
+    @Transactional
     @PreAuthorize("hasRole('PLATFORM_ADMIN')")
     public ResponseEntity<?> createCollege(@Valid @RequestBody CreateCollegeRequest request) {
         String domain = request.getEmailDomain().trim().toLowerCase(Locale.ROOT);
@@ -38,25 +40,18 @@ public class CollegeController {
         User admin = userRepository.findByEmail(adminEmail)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "The admin must create a normal Canopy account before college onboarding"));
-
         if (admin.getRole() == Role.PLATFORM_ADMIN) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "A platform admin cannot be assigned as a college admin");
         }
 
         College college = collegeRepository.save(College.builder()
-                .name(request.getName().trim())
-                .emailDomain(domain)
-                .build());
-
+                .name(request.getName().trim()).emailDomain(domain).build());
         admin.setCollege(college);
         admin.setRole(Role.COLLEGE_ADMIN);
         userRepository.save(admin);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                "id", college.getId(),
-                "name", college.getName(),
-                "emailDomain", college.getEmailDomain(),
-                "adminEmail", admin.getEmail()
-        ));
+                "id", college.getId(), "name", college.getName(),
+                "emailDomain", college.getEmailDomain(), "adminEmail", admin.getEmail()));
     }
 }
