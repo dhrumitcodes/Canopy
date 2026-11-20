@@ -102,9 +102,9 @@ export default function EventDetailPage() {
                         type="button"
                         className={event.registered ? 'btn-danger' : 'btn-solid'}
                         onClick={toggleRegistration}
-                        disabled={busy || (!event.registered && (isPast || full))}
+                        disabled={busy || (!event.registered && (isPast || full || event.status !== 'APPROVED'))}
                     >
-                        {event.registered ? 'Cancel my registration' : isPast ? 'Event has ended' : full ? 'Fully booked' : 'Register for this event'}
+                        {event.registered ? 'Cancel my registration' : event.status !== 'APPROVED' ? 'Awaiting approval' : isPast ? 'Event has ended' : full ? 'Fully booked' : 'Register for this event'}
                     </button>
                     {event.registered && <span className="tone good" style={{ alignSelf: 'center' }}>You are registered</span>}
                 </div>
