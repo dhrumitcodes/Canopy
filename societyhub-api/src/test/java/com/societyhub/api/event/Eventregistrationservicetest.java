@@ -56,7 +56,7 @@ class EventRegistrationServiceTest {
 
     @Test
     void registersWhenSeatsAreAvailable() {
-        when(eventRepository.findById(10L)).thenReturn(Optional.of(upcomingEvent(5)));
+        when(eventRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(upcomingEvent(5)));
         when(registrationRepository.existsByEventIdAndUserId(10L, 7L)).thenReturn(false);
         when(registrationRepository.countByEventId(10L)).thenReturn(3L);
         RegistrationResponse result = service.registerForEvent(10L, user);
@@ -67,7 +67,7 @@ class EventRegistrationServiceTest {
 
     @Test
     void allowsTheLastSeat() {
-        when(eventRepository.findById(10L)).thenReturn(Optional.of(upcomingEvent(5)));
+        when(eventRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(upcomingEvent(5)));
         when(registrationRepository.countByEventId(10L)).thenReturn(4L);
         service.registerForEvent(10L, user);
         verify(registrationRepository).save(any(EventRegistration.class));
@@ -75,7 +75,7 @@ class EventRegistrationServiceTest {
 
     @Test
     void rejectsWhenTheEventIsFull() {
-        when(eventRepository.findById(10L)).thenReturn(Optional.of(upcomingEvent(5)));
+        when(eventRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(upcomingEvent(5)));
         when(registrationRepository.countByEventId(10L)).thenReturn(5L);
         ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> service.registerForEvent(10L, user));
         assertEquals(400, statusOf(ex));
@@ -84,7 +84,7 @@ class EventRegistrationServiceTest {
 
     @Test
     void rejectsDoubleRegistration() {
-        when(eventRepository.findById(10L)).thenReturn(Optional.of(upcomingEvent(5)));
+        when(eventRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(upcomingEvent(5)));
         when(registrationRepository.existsByEventIdAndUserId(10L, 7L)).thenReturn(true);
         ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> service.registerForEvent(10L, user));
         assertEquals(409, statusOf(ex));
@@ -96,14 +96,14 @@ class EventRegistrationServiceTest {
         LocalDateTime start = LocalDateTime.now().minusDays(2);
         Event past = Event.builder().id(10L).society(society).title("Old").capacity(5)
                 .startTime(start).endTime(start.plusHours(2)).build();
-        when(eventRepository.findById(10L)).thenReturn(Optional.of(past));
+        when(eventRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(past));
         ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> service.registerForEvent(10L, user));
         assertEquals(400, statusOf(ex));
     }
 
     @Test
     void rejectsUnknownEvent() {
-        when(eventRepository.findById(99L)).thenReturn(Optional.empty());
+        when(eventRepository.findByIdForUpdate(99L)).thenReturn(Optional.empty());
         ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> service.registerForEvent(99L, user));
         assertEquals(404, statusOf(ex));
     }
@@ -114,7 +114,7 @@ class EventRegistrationServiceTest {
         when(other.getId()).thenReturn(20L);
         Society otherSociety = mock(Society.class);
         when(otherSociety.getCollege()).thenReturn(other);
-        when(eventRepository.findById(10L)).thenReturn(Optional.of(Event.builder().id(10L).society(otherSociety)
+        when(eventRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(Event.builder().id(10L).society(otherSociety)
                 .startTime(LocalDateTime.now().plusDays(1)).endTime(LocalDateTime.now().plusDays(1).plusHours(1)).build()));
         ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> service.registerForEvent(10L, user));
         assertEquals(403, statusOf(ex));
