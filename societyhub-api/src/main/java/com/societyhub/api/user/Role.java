@@ -4,5 +4,6 @@ public enum Role {
     STUDENT,
     MEMBER,
     SOCIETY_ADMIN,
-    COLLEGE_ADMIN
+    COLLEGE_ADMIN,
+    PLATFORM_ADMIN
 }
