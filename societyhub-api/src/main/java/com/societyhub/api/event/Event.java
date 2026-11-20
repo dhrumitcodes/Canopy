@@ -24,4 +24,5 @@ public class Event {
     @Column(name = "reviewed_at") private LocalDateTime reviewedAt;
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "reviewed_by") private User reviewedBy;
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "created_by") private User createdBy;
+    @Column(name = "reminder_sent_at") private LocalDateTime reminderSentAt;
 }
