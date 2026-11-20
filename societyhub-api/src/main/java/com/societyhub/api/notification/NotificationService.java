@@ -17,6 +17,6 @@ public class NotificationService {
   return Map.of("items",items,"unreadCount",repo.countByUserIdAndReadAtIsNull(userId));
  }
  @Transactional public void markRead(Long id,Long userId){Notification n=repo.findByIdAndUserId(id,userId).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Notification not found"));if(n.getReadAt()==null)n.setReadAt(LocalDateTime.now());}
- @Transactional public void markAllRead(Long userId){repo.findTop100ByUserIdOrderByCreatedAtDesc(userId).stream().filter(n->n.getReadAt()==null).forEach(n->n.setReadAt(LocalDateTime.now()));}
+ @Transactional public void markAllRead(Long userId){repo.markAllRead(userId,LocalDateTime.now());}
  public record NotificationItem(Long id,String type,String title,String message,Long eventId,LocalDateTime readAt,LocalDateTime createdAt){}
 }
