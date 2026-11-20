@@ -29,6 +29,7 @@ public class EventRegistrationService {
  @Transactional public RegistrationResponse checkIn(String token,User actor){
   EventRegistration r=registrations.findByQrTokenForUpdate(token).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Invalid ticket"));
   if(!security.isSocietyOfficerOrAdmin(r.getEvent().getSociety().getId()))throw new ResponseStatusException(HttpStatus.FORBIDDEN,"You cannot check in attendees for this society");
+  if(r.getEvent().getStatus()!=EventStatus.APPROVED)throw new ResponseStatusException(HttpStatus.CONFLICT,"This event is not active for check-in");
   LocalDateTime now=LocalDateTime.now();if(now.isBefore(r.getEvent().getStartTime())||now.isAfter(r.getEvent().getEndTime()))throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Check-in is only available during the event");
   if(r.getCheckedInAt()!=null)throw new ResponseStatusException(HttpStatus.CONFLICT,"This ticket has already been checked in");
   r.setCheckedInAt(now);return RegistrationResponse.fromEntity(r);
