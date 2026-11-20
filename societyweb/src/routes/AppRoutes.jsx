@@ -14,6 +14,7 @@ import MembersPage from '../pages/MembersPage';
 import AnnouncementsPage from '../pages/AnnouncementsPage';
 import ChangePasswordPage from '../pages/ChangePasswordPage';
 import SocietyDashboard from '../pages/admin/SocietyDashboard';
+import EventApprovalsPage from '../pages/admin/EventApprovalsPage';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import ExploreLayout from '../components/layout/ExploreLayout';
 
@@ -42,6 +43,7 @@ export default function AppRoutes() {
                             <Route path="societies" element={<SocietiesPage />} />
                             <Route path="societies/:societyId/events/:eventId" element={<EventDetailPage />} />
                             <Route path="registrations" element={<MyRegistrationsPage />} />
+                            <Route path="admin/approvals" element={<EventApprovalsPage />} />
                             <Route path="account" element={<ChangePasswordPage />} />
                         </Route>
 
