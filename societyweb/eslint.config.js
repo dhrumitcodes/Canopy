@@ -13,14 +13,16 @@ export default defineConfig([
       reactHooks.configs.flat.recommended,
       reactRefresh.configs.vite,
     ],
-    rules: {
-      // Existing screens use effects to trigger data loading; keep these advisory while the app is refactored.
-      'react-hooks/set-state-in-effect': 'warn',
-      'react-refresh/only-export-components': 'warn',
-    },
     languageOptions: {
       globals: globals.browser,
       parserOptions: { ecmaFeatures: { jsx: true } },
+    },
+  },
+  {
+    files: ['**/*.{js,jsx}'],
+    rules: {
+      'react-hooks/set-state-in-effect': 'warn',
+      'react-refresh/only-export-components': 'warn',
     },
   },
 ])
