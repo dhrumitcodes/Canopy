@@ -41,10 +41,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/actuator/health/liveness", "/actuator/health/readiness").permitAll()
-                        // These routes pass the HTTP filter, but controller method security still enforces college ownership.
-                        .requestMatchers(HttpMethod.GET,
-                                "/api/v1/societies", "/api/v1/societies/*",
-                                "/api/v1/societies/*/events", "/api/v1/societies/*/events/*").permitAll()
+                        // All college and society data routes require a JWT; method security then enforces tenant and role ownership.
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
