@@ -38,9 +38,10 @@ public class EventService {
    .and(EventSpecification.hasCollegeId(user!=null&&user.getRole()==Role.PLATFORM_ADMIN?null:collegeId))
    .and(EventSpecification.titleContains(search)).and(EventSpecification.locationContains(location)).and(EventSpecification.isUpcoming(upcoming));
   if(user!=null&&user.getRole()==Role.PLATFORM_ADMIN)spec=Specification.where(EventSpecification.hasSocietyId(societyId)).and(EventSpecification.titleContains(search)).and(EventSpecification.locationContains(location)).and(EventSpecification.isUpcoming(upcoming));
-  if(user==null||user.getRole()!=Role.COLLEGE_ADMIN&&user.getRole()!=Role.PLATFORM_ADMIN)
+  if(user==null||(user.getRole()!=Role.COLLEGE_ADMIN&&user.getRole()!=Role.PLATFORM_ADMIN)) {
    Long viewerId=user==null?null:user.getId();
    spec=spec.and((root,q,cb)->cb.or(cb.equal(root.get("status"),EventStatus.APPROVED),viewerId==null?cb.disjunction():cb.equal(root.get("createdBy").get("id"),viewerId)));
+  }
   return eventRepository.findAll(spec,pageable).map(e->toResponse(e,user==null?null:user.getId()));
  }
  @Transactional(readOnly=true) public EventResponse getEventById(Long eventId){
@@ -52,7 +53,7 @@ public class EventService {
   Event e=eventRepository.findByIdForUpdate(eventId).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Event not found"));
   validateTimes(request); if(request.getCapacity()!=null){long count=registrationRepository.countByEventId(eventId);if(request.getCapacity()<count)throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Capacity cannot be lower than registered attendees");e.setCapacity(request.getCapacity());}
   e.setTitle(request.getTitle());e.setDescription(request.getDescription());e.setLocation(request.getLocation());e.setStartTime(request.getStartTime());e.setEndTime(request.getEndTime());
-  if(e.getStatus()==EventStatus.APPROVED)e.setStatus(EventStatus.PENDING);
+  e.setStatus(EventStatus.PENDING);
   return toResponse(eventRepository.save(e),currentUserId());
  }
  @Transactional public void deleteEvent(Long eventId){if(!eventRepository.existsById(eventId))throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Event not found");eventRepository.deleteById(eventId);}
