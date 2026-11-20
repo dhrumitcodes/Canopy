@@ -1,47 +1,28 @@
 package com.societyhub.api.event;
 
 import com.societyhub.api.society.Society;
+import com.societyhub.api.user.User;
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "events")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Event {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "society_id", nullable = false)
-    private Society society;
-
-    @Column(nullable = false)
-    private String title;
-
-    @Column(columnDefinition = "TEXT")
-    private String description;
-
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY) private Long id;
+    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "society_id", nullable = false) private Society society;
+    @Column(nullable = false) private String title;
+    @Column(columnDefinition = "TEXT") private String description;
     private String location;
-
-    @Column(nullable = false)
-    @Builder.Default
-    private Integer capacity = 50;
-
-    @Column(name = "start_time", nullable = false)
-    private LocalDateTime startTime;
-
-    @Column(name = "end_time", nullable = false)
-    private LocalDateTime endTime;
-
-    @Column(name = "created_at", updatable = false)
-    @Builder.Default
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @Column(nullable = false) @Builder.Default private Integer capacity = 50;
+    @Column(name = "start_time", nullable = false) private LocalDateTime startTime;
+    @Column(name = "end_time", nullable = false) private LocalDateTime endTime;
+    @Column(name = "created_at", updatable = false) @Builder.Default private LocalDateTime createdAt = LocalDateTime.now();
+    @Enumerated(EnumType.STRING) @Column(nullable = false) @Builder.Default private EventStatus status = EventStatus.APPROVED;
+    @Column(name = "review_note", columnDefinition = "TEXT") private String reviewNote;
+    @Column(name = "reviewed_at") private LocalDateTime reviewedAt;
+    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "reviewed_by") private User reviewedBy;
+    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "created_by") private User createdBy;
+    @Column(name = "reminder_sent_at") private LocalDateTime reminderSentAt;
 }

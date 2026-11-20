@@ -9,6 +9,7 @@ import com.societyhub.api.membership.dto.AddMemberRequest;
 import com.societyhub.api.society.Society;
 import com.societyhub.api.society.SocietyRepository;
 import com.societyhub.api.user.User;
+import com.societyhub.api.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ public class JoinRequestService {
     private final SocietyRepository societyRepository;
     private final MembershipRepository membershipRepository;
     private final MembershipService membershipService;
+    private final NotificationService notificationService;
 
     @Transactional
     public JoinRequestResponse create(Long societyId, User user, String message) {
@@ -65,6 +67,7 @@ public class JoinRequestService {
         membershipService.addMember(societyId, add);
         request.setStatus(JoinRequestStatus.APPROVED);
         request.setDecidedAt(LocalDateTime.now());
+        notificationService.notifyUser(request.getUser(), "JOIN_REQUEST_APPROVED", "Society request approved", "Your request to join " + request.getSociety().getName() + " was approved.", null);
         return JoinRequestResponse.fromEntity(joinRequestRepository.save(request));
     }
 
@@ -73,6 +76,7 @@ public class JoinRequestService {
         JoinRequest request = findPending(societyId, requestId);
         request.setStatus(JoinRequestStatus.DECLINED);
         request.setDecidedAt(LocalDateTime.now());
+        notificationService.notifyUser(request.getUser(), "JOIN_REQUEST_DECLINED", "Society request declined", "Your request to join " + request.getSociety().getName() + " was declined.", null);
         return JoinRequestResponse.fromEntity(joinRequestRepository.save(request));
     }
 

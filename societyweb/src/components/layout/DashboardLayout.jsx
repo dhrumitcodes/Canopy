@@ -4,6 +4,7 @@ import { NAV, roleLabel } from '../../utils/roles';
 import Icon from '../common/Icon';
 import Logo from '../common/Logo';
 import { APP_NAME } from '../../config';
+import NotificationBell from '../common/NotificationBell';
 
 export default function DashboardLayout() {
     const { user, logout } = useAuth();
@@ -50,6 +51,7 @@ export default function DashboardLayout() {
                             <Icon name={n.icon} />{n.label}
                         </NavLink>
                     ))}
+                    {isAdmin && <NavLink to="/discover/admin/approvals" className="nav-item"><Icon name="form" />Event approvals</NavLink>}
                     <NavLink to="/discover" className="nav-item"><Icon name="search" />Explore</NavLink>
                     <NavLink to={`/societies/${societyId}/account`} className={({ isActive }) => `nav-item ${isActive ? 'on' : ''}`}>
                         <Icon name="set" />Account
@@ -64,6 +66,7 @@ export default function DashboardLayout() {
                 <header className="topbar">
                     <div className="crumbs">{societyName} / <strong>{current.label}</strong></div>
                     <div className="top-right">
+                        <NotificationBell />
                         <span className="role-chip">{roleText}</span>
                         <span className="avatar" title={user.fullName}>{initials}</span>
                     </div>

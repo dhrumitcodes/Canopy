@@ -4,6 +4,8 @@ import com.societyhub.api.college.College;
 import com.societyhub.api.event.dto.RegistrationResponse;
 import com.societyhub.api.society.Society;
 import com.societyhub.api.user.User;
+import com.societyhub.api.notification.NotificationService;
+import com.societyhub.api.security.SocietySecurityEvaluator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,6 +29,8 @@ import static org.mockito.Mockito.*;
 class EventRegistrationServiceTest {
     @Mock private EventRegistrationRepository registrationRepository;
     @Mock private EventRepository eventRepository;
+    @Mock private NotificationService notificationService;
+    @Mock private SocietySecurityEvaluator security;
     @InjectMocks private EventRegistrationService service;
     private User user;
     private Society society;

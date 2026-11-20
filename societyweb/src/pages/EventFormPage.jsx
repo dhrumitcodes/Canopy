@@ -65,6 +65,7 @@ export default function EventFormPage() {
             <Link className="link" to={`/societies/${societyId}/events`}>Back to events</Link>
             <h1 className="greet" style={{ marginTop: 12 }}>{editing ? 'Edit event' : 'New event'}</h1>
             <form className="panel form-card" onSubmit={submit}>
+                <p className="muted">New and edited events are sent to your college admin for approval before students can register.</p>
                 <label htmlFor="title">Title</label>
                 <input id="title" className="field full" value={form.title} onChange={set('title')} required />
 
