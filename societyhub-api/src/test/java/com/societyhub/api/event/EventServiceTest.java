@@ -5,6 +5,7 @@ import com.societyhub.api.event.dto.EventResponse;
 import com.societyhub.api.society.Society;
 import com.societyhub.api.society.SocietyRepository;
 import com.societyhub.api.user.UserRepository;
+import com.societyhub.api.notification.NotificationService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,6 +33,7 @@ class EventServiceTest {
     @Mock private SocietyRepository societyRepository;
     @Mock private EventRegistrationRepository registrationRepository;
     @Mock private UserRepository userRepository;
+    @Mock private NotificationService notificationService;
     @InjectMocks private EventService service;
     private Society society;
 
