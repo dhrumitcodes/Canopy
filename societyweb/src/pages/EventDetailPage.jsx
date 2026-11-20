@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { formatDateTime } from '../utils/formatDate';
 import Loader from '../components/common/Loader';
 import ErrorMessage from '../components/common/ErrorMessage';
+import QrCheckIn from '../components/events/QrCheckIn';
 
 export default function EventDetailPage() {
     const { eventsPath } = useOutletContext();
@@ -109,19 +110,21 @@ export default function EventDetailPage() {
                 </div>
                 {actionError && <p className="form-error-light" role="alert">{actionError}</p>}
 
+                <p className="muted">Event status: <strong>{event.status || 'APPROVED'}</strong>{event.reviewNote ? ` · ${event.reviewNote}` : ''}</p>
                 <h2 style={{ marginTop: 28 }}>About this event</h2>
                 <p className="desc">{event.description || 'No description yet.'}</p>
             </section>
 
+            {canManage && <QrCheckIn />}
             {canManage && (
                 <section className="panel table-wrap" style={{ marginTop: 18 }}>
                     <h2>Attendees ({attendees.length})</h2>
                     {attendees.length === 0 ? <p className="muted empty">Nobody has registered yet.</p> : (
                         <table>
-                            <thead><tr><th>Name</th><th>Email</th></tr></thead>
+                            <thead><tr><th>Name</th><th>Email</th><th>Attendance</th></tr></thead>
                             <tbody>
                             {attendees.map((a) => (
-                                <tr key={a.id}><td><strong>{a.userFullName}</strong></td><td className="muted">{a.userEmail}</td></tr>
+                                <tr key={a.id}><td><strong>{a.userFullName}</strong></td><td className="muted">{a.userEmail}</td><td>{a.checkedInAt ? `Checked in ${new Date(a.checkedInAt).toLocaleString()}` : 'Not checked in'}</td></tr>
                             ))}
                             </tbody>
                         </table>
