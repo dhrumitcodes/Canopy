@@ -28,9 +28,9 @@ public class EventService {
    .startTime(request.getStartTime()).endTime(request.getEndTime()).createdBy(actor).status(EventStatus.PENDING).build();
   if(request.getCapacity()!=null)event.setCapacity(request.getCapacity());
   Event saved=eventRepository.save(event);
-  userRepository.findByCollegeIdAndRole(society.getCollege().getId(),Role.COLLEGE_ADMIN).forEach(admin->
+  if(society.getCollege()!=null) userRepository.findByCollegeIdAndRole(society.getCollege().getId(),Role.COLLEGE_ADMIN).forEach(admin->
    notificationService.notifyUser(admin,"EVENT_REVIEW","Event awaiting approval",saved.getTitle()+" was submitted for review.",saved));
-  return toResponse(saved,actor.getId());
+  return toResponse(saved,actor==null?null:actor.getId());
  }
  @Transactional(readOnly=true) public Page<EventResponse> getFilteredEvents(Long societyId,String search,String location,Boolean upcoming,Pageable pageable){
   User user=currentUser(); Long collegeId=user==null||user.getCollege()==null?null:user.getCollege().getId();
