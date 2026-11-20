@@ -108,7 +108,7 @@ class EventServiceTest {
 
     @Test
     void updateRefusesACapacityBelowTheNumberAlreadyRegistered() {
-        when(eventRepository.findById(10L)).thenReturn(Optional.of(existingEvent()));
+        when(eventRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(existingEvent()));
         when(registrationRepository.countByEventId(10L)).thenReturn(12L);
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> service.updateEvent(10L, request(10)));
@@ -119,7 +119,7 @@ class EventServiceTest {
 
     @Test
     void updateAllowsACapacityEqualToTheRegisteredCount() {
-        when(eventRepository.findById(10L)).thenReturn(Optional.of(existingEvent()));
+        when(eventRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(existingEvent()));
         when(registrationRepository.countByEventId(10L)).thenReturn(12L);
 
         EventResponse response = service.updateEvent(10L, request(12));
@@ -130,7 +130,7 @@ class EventServiceTest {
 
     @Test
     void updateKeepsTheCapacityWhenNoneIsSent() {
-        when(eventRepository.findById(10L)).thenReturn(Optional.of(existingEvent()));
+        when(eventRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(existingEvent()));
 
         EventResponse response = service.updateEvent(10L, request(null));
 
@@ -148,7 +148,7 @@ class EventServiceTest {
 
     @Test
     void responseCarriesTheRegisteredCountAndNotRegisteredForAnonymousVisitors() {
-        when(eventRepository.findById(10L)).thenReturn(Optional.of(existingEvent()));
+        when(eventRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(existingEvent()));
         when(registrationRepository.countByEventId(10L)).thenReturn(3L);
 
         EventResponse response = service.getEventById(10L);
