@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -32,10 +33,13 @@ public class MembershipService {
         Society society = societyRepository.findById(societyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Society not found"));
 
+        // Adding someone to a society only grants ordinary membership.
+        // Officer privileges must be assigned later by the society president
+        // through the separately protected role-management endpoint.
         Membership membership = Membership.builder()
                 .user(user)
                 .society(society)
-                .societyRole(request.getRole())
+                .societyRole(SocietyRole.MEMBER)
                 .build();
 
         return mapToResponse(membershipRepository.save(membership));
@@ -70,7 +74,7 @@ public class MembershipService {
 
     private User resolveUser(AddMemberRequest request) {
         if (request.getEmail() != null && !request.getEmail().isBlank()) {
-            String email = request.getEmail().trim();
+            String email = request.getEmail().trim().toLowerCase(Locale.ROOT);
             return userRepository.findByEmail(email)
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "No account found for " + email + ". They need to register first."));
@@ -81,6 +85,7 @@ public class MembershipService {
         }
         throw new IllegalArgumentException("Provide the member's email.");
     }
+
     private void ensureNotLastPresident(Long societyId, Membership target, SocietyRole newRole) {
         if (target.getSocietyRole() == SocietyRole.PRESIDENT && newRole != SocietyRole.PRESIDENT) {
             long presidents = membershipRepository.findBySocietyId(societyId).stream()
