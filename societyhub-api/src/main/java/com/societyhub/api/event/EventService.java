@@ -54,6 +54,7 @@ public class EventService {
   Event e=eventRepository.findByIdForUpdate(eventId).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Event not found"));
   validateTimes(request); if(request.getCapacity()!=null){long count=registrationRepository.countByEventId(eventId);if(request.getCapacity()<count)throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Capacity cannot be lower than the " + count + " people already registered");e.setCapacity(request.getCapacity());}
   e.setTitle(request.getTitle());e.setDescription(request.getDescription());e.setLocation(request.getLocation());e.setStartTime(request.getStartTime());e.setEndTime(request.getEndTime());
+  User editor=currentUser();if(editor!=null)e.setCreatedBy(editor);
   e.setStatus(EventStatus.PENDING);e.setReviewNote(null);e.setReviewedAt(null);e.setReviewedBy(null);
   return toResponse(eventRepository.save(e),currentUserId());
  }
