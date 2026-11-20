@@ -35,7 +35,8 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private Role role;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    // Used by request-level authorization evaluators after the repository call returns.
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "college_id")
     private College college;
 
