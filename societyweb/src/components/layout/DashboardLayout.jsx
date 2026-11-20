@@ -51,6 +51,7 @@ export default function DashboardLayout() {
                             <Icon name={n.icon} />{n.label}
                         </NavLink>
                     ))}
+                    {isAdmin && <NavLink to="/discover/admin/approvals" className="nav-item"><Icon name="form" />Event approvals</NavLink>}
                     <NavLink to="/discover" className="nav-item"><Icon name="search" />Explore</NavLink>
                     <NavLink to={`/societies/${societyId}/account`} className={({ isActive }) => `nav-item ${isActive ? 'on' : ''}`}>
                         <Icon name="set" />Account
