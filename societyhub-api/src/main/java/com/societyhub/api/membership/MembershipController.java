@@ -28,6 +28,7 @@ public class MembershipController {
     }
 
     @GetMapping
+    @PreAuthorize("@societySecurity.isSocietyMemberOrAdmin(#societyId)")
     public ResponseEntity<List<MembershipResponse>> getSocietyMembers(@PathVariable Long societyId) {
         return ResponseEntity.ok(membershipService.getSocietyMembers(societyId));
     }

@@ -34,3 +34,9 @@ build/
 
 ### Local properties ###
 src/main/resources/application-local.properties
+
+### Local environment files (never commit secrets) ###
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example
