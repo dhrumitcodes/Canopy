@@ -3,12 +3,26 @@ name: Database backup
 on:
   schedule:
     - cron: "0 21 * * *"   # every day at 21:00 UTC
-  workflow_dispatch:        # lets you run it by hand from the Actions tab
+  workflow_dispatch:
 
 jobs:
   backup:
     runs-on: ubuntu-latest
     steps:
+      - name: Validate backup secrets
+        env:
+          DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::Missing GitHub Actions secret BACKUP_DATABASE_URL. Add the hosted PostgreSQL connection URL in repository Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          if [ -z "$BACKUP_PASSPHRASE" ]; then
+            echo "::error::Missing GitHub Actions secret BACKUP_PASSPHRASE. Add a strong backup encryption passphrase in repository Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
       - name: Dump the database
         env:
           DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
