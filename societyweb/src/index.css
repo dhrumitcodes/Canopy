@@ -150,3 +150,28 @@ td select.field { height: 36px; min-width: 150px; }
 .notice p { margin: 8px 0 12px; white-space: pre-wrap; line-height: 1.6; }
 .dash-notice { padding: 12px 0; border-top: 1px solid #e7ebe3; }
 .dash-notice strong { display: block; }
+
+/* Event approvals, notifications and QR attendance */
+.notification-wrap { position: relative; }
+.notification-trigger { display: flex; align-items: center; gap: 7px; border: 1px solid var(--line); border-radius: 9px; background: #fff; padding: 8px 10px; color: var(--ink); }
+.notification-trigger b { display: inline-grid; place-items: center; min-width: 19px; height: 19px; border-radius: 20px; background: var(--green); color: #fff; font-size: 11px; }
+.notification-popover { position: absolute; z-index: 20; right: 0; top: calc(100% + 10px); width: min(360px, calc(100vw - 32px)); max-height: 440px; overflow: auto; padding: 12px; background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 14px 40px #14231b22; }
+.notification-popover header { display: flex; justify-content: space-between; align-items: center; padding: 4px 4px 10px; border-bottom: 1px solid var(--line); }
+.link-button { border: 0; background: none; color: var(--green); font-weight: 600; }
+.notification-item { display: flex; flex-direction: column; gap: 5px; width: 100%; padding: 12px 8px; text-align: left; border: 0; border-bottom: 1px solid var(--line); background: #fff; color: var(--ink); }
+.notification-item.unread { background: #f2f7f2; }
+.notification-item span { font-size: 13px; line-height: 1.4; }
+.notification-item small { font-size: 11px; }
+.ticket-row { padding: 12px 0; border-bottom: 1px solid var(--line); }
+.ticket-row:last-child { border-bottom: 0; }
+.ticket-row .event-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.qr-ticket { display: flex; gap: 20px; align-items: center; padding: 18px; margin: 10px 0 0 58px; background: #f7f8f4; border: 1px solid var(--line); border-radius: 12px; }
+.qr-ticket p { margin: 8px 0; }
+.qr-ticket svg { flex: none; background: #fff; padding: 8px; }
+.ticket-status { color: var(--green); font-weight: 600; }
+.checkin-panel { margin-top: 18px; }
+.checkin-panel h2 { margin-bottom: 8px; }
+.checkin-panel label { display: block; margin-top: 16px; font-weight: 600; }
+.qr-video { width: min(100%, 420px); aspect-ratio: 4/3; object-fit: cover; margin: 12px 0; background: #111; border-radius: 12px; }
+.checkin-panel .actions-row { align-items: center; flex-wrap: wrap; }
+@media (max-width: 640px) { .notification-trigger span { display: none; } .qr-ticket { margin-left: 0; flex-direction: column; align-items: flex-start; } }
