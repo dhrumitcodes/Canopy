@@ -10,6 +10,7 @@ import com.societyhub.api.membership.dto.AddMemberRequest;
 import com.societyhub.api.society.Society;
 import com.societyhub.api.society.SocietyRepository;
 import com.societyhub.api.user.User;
+import com.societyhub.api.notification.NotificationService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,7 @@ class JoinRequestServiceTest {
     @Mock private SocietyRepository societyRepository;
     @Mock private MembershipRepository membershipRepository;
     @Mock private MembershipService membershipService;
+    @Mock private NotificationService notificationService;
     @InjectMocks private JoinRequestService service;
     private User user;
     private Society society;
