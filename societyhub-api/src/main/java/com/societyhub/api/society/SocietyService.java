@@ -58,7 +58,12 @@ public class SocietyService {
     @Transactional
     public SocietyResponse updateSociety(Long id, CreateSocietyRequest request) {
         Society society = findInCurrentCollege(id);
-        society.setName(request.getName().trim());
+        String updatedName = request.getName().trim();
+        if (!society.getName().equalsIgnoreCase(updatedName)
+                && societyRepository.existsByNameIgnoreCaseAndCollegeId(updatedName, society.getCollege().getId())) {
+            throw new IllegalArgumentException("A society with that name already exists in your college.");
+        }
+        society.setName(updatedName);
         society.setDescription(request.getDescription());
         society.setCategory(request.getCategory());
         return mapToResponse(societyRepository.save(society));
