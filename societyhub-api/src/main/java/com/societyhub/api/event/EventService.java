@@ -46,17 +46,23 @@ public class EventService {
  }
  @Transactional(readOnly=true) public EventResponse getEventById(Long eventId){
   Event e=eventRepository.findById(eventId).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Event not found"));
-  User u=currentUser(); if(e.getStatus()!=EventStatus.APPROVED && (u==null||!canReview(u,e)&&!u.getId().equals(e.getCreatedBy()==null?null:e.getCreatedBy().getId()))) throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Event not found");
+  User u=currentUser(); boolean registered=u!=null&&registrationRepository.existsByEventIdAndUserId(eventId,u.getId());
+  if(e.getStatus()!=EventStatus.APPROVED && (u==null||!canReview(u,e)&&!u.getId().equals(e.getCreatedBy()==null?null:e.getCreatedBy().getId())&&!registered)) throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Event not found");
   return toResponse(e,u==null?null:u.getId());
  }
  @Transactional public EventResponse updateEvent(Long eventId,EventRequest request){
   Event e=eventRepository.findByIdForUpdate(eventId).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Event not found"));
   validateTimes(request); if(request.getCapacity()!=null){long count=registrationRepository.countByEventId(eventId);if(request.getCapacity()<count)throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Capacity cannot be lower than registered attendees");e.setCapacity(request.getCapacity());}
   e.setTitle(request.getTitle());e.setDescription(request.getDescription());e.setLocation(request.getLocation());e.setStartTime(request.getStartTime());e.setEndTime(request.getEndTime());
-  e.setStatus(EventStatus.PENDING);
+  e.setStatus(EventStatus.PENDING);e.setReviewNote(null);e.setReviewedAt(null);e.setReviewedBy(null);
   return toResponse(eventRepository.save(e),currentUserId());
  }
- @Transactional public void deleteEvent(Long eventId){if(!eventRepository.existsById(eventId))throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Event not found");eventRepository.deleteById(eventId);}
+ @Transactional public void deleteEvent(Long eventId){
+  Event e=eventRepository.findByIdForUpdate(eventId).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Event not found"));
+  if(e.getStatus()==EventStatus.CANCELLED)throw new ResponseStatusException(HttpStatus.CONFLICT,"Event is already cancelled");
+  e.setStatus(EventStatus.CANCELLED);
+  registrationRepository.findByEventId(eventId).forEach(r->notificationService.notifyUser(r.getUser(),"EVENT_CANCELLED","Event cancelled",e.getTitle()+" has been cancelled by the organizer.",e));
+ }
  @Transactional(readOnly=true) public List<EventResponse> pendingForCollege(Long collegeId){return eventRepository.findPendingByCollege(collegeId).stream().map(e->toResponse(e,null)).toList();}
  @Transactional public EventResponse review(Long eventId,boolean approve,String note){
   User reviewer=currentUser(); Event e=eventRepository.findByIdForUpdate(eventId).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Event not found"));
