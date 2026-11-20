@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import Icon from '../common/Icon';
 import Logo from '../common/Logo';
 import { APP_NAME } from '../../config';
+import NotificationBell from '../common/NotificationBell';
 
 
 export default function ExploreLayout() {
@@ -22,6 +23,7 @@ export default function ExploreLayout() {
                     <NavLink end to="/discover" className={link}><Icon name="cal" />Events</NavLink>
                     <NavLink to="/discover/societies" className={link}><Icon name="team" />{isAdmin ? 'Societies' : 'Societies'}</NavLink>
                     <NavLink to="/discover/registrations" className={link}><Icon name="form" />My registrations</NavLink>
+                    {isAdmin && <NavLink to="/discover/admin/approvals" className={link}><Icon name="form" />Event approvals</NavLink>}
                     {first && (
                         <NavLink to={`/societies/${first.societyId}/overview`} className="nav-item"><Icon name="dash" />My society</NavLink>
                     )}
@@ -35,6 +37,7 @@ export default function ExploreLayout() {
                 <header className="topbar">
                     <div className="crumbs">Explore</div>
                     <div className="top-right">
+                        <NotificationBell />
                         <span className="role-chip">{label}</span>
                         <span className="avatar" title={user.fullName}>{initials}</span>
                     </div>
