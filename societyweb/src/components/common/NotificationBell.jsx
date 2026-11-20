@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { notificationApi } from '../../api/notificationApi';
 export default function NotificationBell() {
     const [data, setData] = useState({ items: [], unreadCount: 0 });
     const [open, setOpen] = useState(false);
     const [error, setError] = useState('');
-    const load = () => notificationApi.list().then(setData).catch(() => setError('Notifications could not be loaded.'));
-    useEffect(() => { load(); }, []);
+    const load = useCallback(() => notificationApi.list().then(setData).catch(() => setError('Notifications could not be loaded.')), []);
+    useEffect(() => { load(); }, [load]);
     const read = async (item) => { if (!item.readAt) { await notificationApi.markRead(item.id); await load(); } };
     const readAll = async () => { await notificationApi.markAllRead(); await load(); };
     return <div className="notification-wrap">
