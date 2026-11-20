@@ -56,7 +56,7 @@ export default function EventListPage() {
                             <span className="date-tile"><b>{dayOf(e.startTime)}</b><small>{monthOf(e.startTime)}</small></span>
                             <span>
                                 <strong>{e.title}</strong>
-                                <small>{formatDateTime(e.startTime)}{e.location ? ` · ${e.location}` : ''}</small>
+                                <small>{formatDateTime(e.startTime)}{e.location ? ` · ${e.location}` : ''} · {e.status || 'APPROVED'}</small>
                             </span>
                         </Link>
                     ))}
