@@ -1,8 +1,11 @@
 package com.societyhub.api.security;
 
+import com.societyhub.api.college.College;
 import com.societyhub.api.membership.Membership;
 import com.societyhub.api.membership.MembershipRepository;
 import com.societyhub.api.membership.SocietyRole;
+import com.societyhub.api.society.Society;
+import com.societyhub.api.society.SocietyRepository;
 import com.societyhub.api.user.Role;
 import com.societyhub.api.user.User;
 import com.societyhub.api.user.UserRepository;
@@ -26,34 +29,36 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-/** The rules behind every @PreAuthorize in the app, so a change here is caught immediately. */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class SocietySecurityEvaluatorTest {
-
     private static final String EMAIL = "someone@college.edu";
-
     @Mock private MembershipRepository membershipRepository;
     @Mock private UserRepository userRepository;
+    @Mock private SocietyRepository societyRepository;
     @InjectMocks private SocietySecurityEvaluator evaluator;
+    private College college;
 
     @BeforeEach
     void clear() {
         SecurityContextHolder.clearContext();
+        college = mock(College.class);
+        when(college.getId()).thenReturn(10L);
+        Society society = mock(Society.class);
+        when(societyRepository.findByIdAndCollegeId(1L, 10L)).thenReturn(Optional.of(society));
     }
 
     @AfterEach
-    void tearDown() {
-        SecurityContextHolder.clearContext();
-    }
+    void tearDown() { SecurityContextHolder.clearContext(); }
 
     private void signInAs(Role globalRole) {
         User user = mock(User.class);
         when(user.getId()).thenReturn(7L);
         when(user.getRole()).thenReturn(globalRole);
+        when(user.getCollege()).thenReturn(globalRole == Role.PLATFORM_ADMIN ? null : college);
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
-        SecurityContextHolder.getContext()
-                .setAuthentication(new UsernamePasswordAuthenticationToken(EMAIL, null, List.of()));
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(EMAIL, null, List.of()));
     }
 
     private void memberOf(long societyId, SocietyRole role) {
@@ -75,7 +80,6 @@ class SocietySecurityEvaluatorTest {
     void aPlainMemberCannotManage() {
         signInAs(Role.STUDENT);
         memberOf(1L, SocietyRole.MEMBER);
-
         assertFalse(evaluator.isSocietyOfficerOrAdmin(1L));
     }
 
@@ -83,8 +87,7 @@ class SocietySecurityEvaluatorTest {
     void anOfficerOfOneSocietyCannotManageAnother() {
         signInAs(Role.STUDENT);
         memberOf(1L, SocietyRole.PRESIDENT);
-        when(membershipRepository.findByUserIdAndSocietyId(7L, 2L)).thenReturn(Optional.empty());
-
+        when(societyRepository.findByIdAndCollegeId(2L, 10L)).thenReturn(Optional.empty());
         assertFalse(evaluator.isSocietyOfficerOrAdmin(2L));
     }
 
@@ -92,18 +95,25 @@ class SocietySecurityEvaluatorTest {
     void aNonMemberCannotManage() {
         signInAs(Role.STUDENT);
         when(membershipRepository.findByUserIdAndSocietyId(7L, 1L)).thenReturn(Optional.empty());
-
         assertFalse(evaluator.isSocietyOfficerOrAdmin(1L));
     }
 
     @Test
-    void theCollegeAdminCanManageEverySociety() {
+    void collegeAdminCanManageOnlyTheirOwnCollegeSocieties() {
         signInAs(Role.COLLEGE_ADMIN);
-        when(membershipRepository.findByUserIdAndSocietyId(7L, 1L)).thenReturn(Optional.empty());
-
         assertTrue(evaluator.isSocietyOfficerOrAdmin(1L));
         assertTrue(evaluator.isSocietyPresident(1L));
         assertTrue(evaluator.isCollegeAdmin());
+        when(societyRepository.findByIdAndCollegeId(2L, 10L)).thenReturn(Optional.empty());
+        assertFalse(evaluator.isSocietyOfficerOrAdmin(2L));
+    }
+
+    @Test
+    void platformAdminCanAccessSocietiesAcrossColleges() {
+        signInAs(Role.PLATFORM_ADMIN);
+        assertTrue(evaluator.isSocietyOfficerOrAdmin(1L));
+        assertTrue(evaluator.isSocietyPresident(999L));
+        assertTrue(evaluator.isPlatformAdmin());
     }
 
     @Test
@@ -111,7 +121,6 @@ class SocietySecurityEvaluatorTest {
         signInAs(Role.STUDENT);
         memberOf(1L, SocietyRole.SECRETARY);
         assertFalse(evaluator.isSocietyPresident(1L));
-
         memberOf(1L, SocietyRole.PRESIDENT);
         assertTrue(evaluator.isSocietyPresident(1L));
     }
@@ -120,7 +129,6 @@ class SocietySecurityEvaluatorTest {
     void aSocietyPresidentIsNotACollegeAdmin() {
         signInAs(Role.STUDENT);
         memberOf(1L, SocietyRole.PRESIDENT);
-
         assertFalse(evaluator.isCollegeAdmin());
     }
 

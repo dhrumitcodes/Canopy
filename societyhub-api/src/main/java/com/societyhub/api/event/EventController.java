@@ -17,48 +17,40 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
 public class EventController {
-
     private final EventService eventService;
 
     @PostMapping("/societies/{societyId}/events")
     @PreAuthorize("@societySecurity.isSocietyOfficerOrAdmin(#societyId)")
-    public ResponseEntity<EventResponse> createEvent(
-            @PathVariable Long societyId,
-            @Valid @RequestBody EventRequest request) {
+    public ResponseEntity<EventResponse> createEvent(@PathVariable Long societyId, @Valid @RequestBody EventRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(eventService.createEvent(societyId, request));
     }
 
     @GetMapping("/societies/{societyId}/events")
-    public ResponseEntity<Page<EventResponse>> getSocietyEvents(
-            @PathVariable Long societyId,
-            @RequestParam(required = false) String search,
-            @RequestParam(required = false) String location,
+    @PreAuthorize("@societySecurity.canAccessSociety(#societyId)")
+    public ResponseEntity<Page<EventResponse>> getSocietyEvents(@PathVariable Long societyId,
+            @RequestParam(required = false) String search, @RequestParam(required = false) String location,
             @RequestParam(required = false) Boolean upcoming,
             @PageableDefault(size = 10, sort = "startTime") Pageable pageable) {
         return ResponseEntity.ok(eventService.getFilteredEvents(societyId, search, location, upcoming, pageable));
     }
 
     @GetMapping("/events")
-    public ResponseEntity<Page<EventResponse>> getAllEvents(
-            @RequestParam(required = false) String search,
-            @RequestParam(required = false) String location,
-            @RequestParam(required = false) Boolean upcoming,
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Page<EventResponse>> getAllEvents(@RequestParam(required = false) String search,
+            @RequestParam(required = false) String location, @RequestParam(required = false) Boolean upcoming,
             @PageableDefault(size = 10, sort = "startTime") Pageable pageable) {
         return ResponseEntity.ok(eventService.getFilteredEvents(null, search, location, upcoming, pageable));
     }
 
     @GetMapping("/societies/{societyId}/events/{eventId}")
-    public ResponseEntity<EventResponse> getEventById(
-            @PathVariable Long societyId,
-            @PathVariable Long eventId) {
+    @PreAuthorize("@societySecurity.canAccessSociety(#societyId)")
+    public ResponseEntity<EventResponse> getEventById(@PathVariable Long societyId, @PathVariable Long eventId) {
         return ResponseEntity.ok(findInSociety(societyId, eventId));
     }
 
     @PutMapping("/societies/{societyId}/events/{eventId}")
     @PreAuthorize("@societySecurity.isSocietyOfficerOrAdmin(#societyId)")
-    public ResponseEntity<EventResponse> updateEvent(
-            @PathVariable Long societyId,
-            @PathVariable Long eventId,
+    public ResponseEntity<EventResponse> updateEvent(@PathVariable Long societyId, @PathVariable Long eventId,
             @Valid @RequestBody EventRequest request) {
         findInSociety(societyId, eventId);
         return ResponseEntity.ok(eventService.updateEvent(eventId, request));
@@ -66,18 +58,15 @@ public class EventController {
 
     @DeleteMapping("/societies/{societyId}/events/{eventId}")
     @PreAuthorize("@societySecurity.isSocietyOfficerOrAdmin(#societyId)")
-    public ResponseEntity<Void> deleteEvent(
-            @PathVariable Long societyId,
-            @PathVariable Long eventId) {
+    public ResponseEntity<Void> deleteEvent(@PathVariable Long societyId, @PathVariable Long eventId) {
         findInSociety(societyId, eventId);
         eventService.deleteEvent(eventId);
         return ResponseEntity.noContent().build();
     }
+
     private EventResponse findInSociety(Long societyId, Long eventId) {
         EventResponse event = eventService.getEventById(eventId);
-        if (!societyId.equals(event.getSocietyId())) {
-            throw new ResourceNotFoundException("Event not found");
-        }
+        if (!societyId.equals(event.getSocietyId())) throw new ResourceNotFoundException("Event not found");
         return event;
     }
 }

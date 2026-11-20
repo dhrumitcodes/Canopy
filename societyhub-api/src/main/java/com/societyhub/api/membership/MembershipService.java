@@ -8,8 +8,10 @@ import com.societyhub.api.society.SocietyRepository;
 import com.societyhub.api.user.User;
 import com.societyhub.api.user.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Locale;
@@ -17,7 +19,6 @@ import java.util.Locale;
 @Service
 @RequiredArgsConstructor
 public class MembershipService {
-
     private final MembershipRepository membershipRepository;
     private final UserRepository userRepository;
     private final SocietyRepository societyRepository;
@@ -25,31 +26,22 @@ public class MembershipService {
     @Transactional
     public MembershipResponse addMember(Long societyId, AddMemberRequest request) {
         User user = resolveUser(request);
-
         if (membershipRepository.existsByUserIdAndSocietyId(user.getId(), societyId)) {
             throw new IllegalArgumentException("This person is already a member of the society.");
         }
-
         Society society = societyRepository.findById(societyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Society not found"));
-
-        // Adding someone to a society only grants ordinary membership.
-        // Officer privileges must be assigned later by the society president
-        // through the separately protected role-management endpoint.
+        if (user.getCollege() == null || !user.getCollege().getId().equals(society.getCollege().getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Users can only join societies in their own college");
+        }
         Membership membership = Membership.builder()
-                .user(user)
-                .society(society)
-                .societyRole(SocietyRole.MEMBER)
-                .build();
-
+                .user(user).society(society).societyRole(SocietyRole.MEMBER).build();
         return mapToResponse(membershipRepository.save(membership));
     }
 
     @Transactional(readOnly = true)
     public List<MembershipResponse> getSocietyMembers(Long societyId) {
-        return membershipRepository.findBySocietyId(societyId).stream()
-                .map(this::mapToResponse)
-                .toList();
+        return membershipRepository.findBySocietyId(societyId).stream().map(this::mapToResponse).toList();
     }
 
     @Transactional
@@ -76,8 +68,7 @@ public class MembershipService {
         if (request.getEmail() != null && !request.getEmail().isBlank()) {
             String email = request.getEmail().trim().toLowerCase(Locale.ROOT);
             return userRepository.findByEmail(email)
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            "No account found for " + email + ". They need to register first."));
+                    .orElseThrow(() -> new ResourceNotFoundException("No account found for " + email + ". They need to register first."));
         }
         if (request.getUserId() != null) {
             return userRepository.findById(request.getUserId())
@@ -89,11 +80,8 @@ public class MembershipService {
     private void ensureNotLastPresident(Long societyId, Membership target, SocietyRole newRole) {
         if (target.getSocietyRole() == SocietyRole.PRESIDENT && newRole != SocietyRole.PRESIDENT) {
             long presidents = membershipRepository.findBySocietyId(societyId).stream()
-                    .filter(m -> m.getSocietyRole() == SocietyRole.PRESIDENT)
-                    .count();
-            if (presidents <= 1) {
-                throw new IllegalArgumentException("A society must have at least one president. Make someone else president first.");
-            }
+                    .filter(m -> m.getSocietyRole() == SocietyRole.PRESIDENT).count();
+            if (presidents <= 1) throw new IllegalArgumentException("A society must have at least one president. Make someone else president first.");
         }
     }
 

@@ -1,5 +1,6 @@
 package com.societyhub.api.joinrequest;
 
+import com.societyhub.api.college.College;
 import com.societyhub.api.common.exception.ResourceNotFoundException;
 import com.societyhub.api.joinrequest.dto.JoinRequestResponse;
 import com.societyhub.api.membership.MembershipRepository;
@@ -22,37 +23,34 @@ import org.mockito.quality.Strictness;
 
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class JoinRequestServiceTest {
-
     @Mock private JoinRequestRepository joinRequestRepository;
     @Mock private SocietyRepository societyRepository;
     @Mock private MembershipRepository membershipRepository;
     @Mock private MembershipService membershipService;
     @InjectMocks private JoinRequestService service;
-
     private User user;
     private Society society;
+    private College college;
 
     @BeforeEach
     void setUp() {
+        college = mock(College.class);
+        when(college.getId()).thenReturn(10L);
         user = mock(User.class);
         when(user.getId()).thenReturn(7L);
+        when(user.getCollege()).thenReturn(college);
         society = mock(Society.class);
         when(society.getId()).thenReturn(1L);
         when(society.getName()).thenReturn("Coding Club");
+        when(society.getCollege()).thenReturn(college);
         when(joinRequestRepository.save(any(JoinRequest.class))).thenAnswer(inv -> inv.getArgument(0));
     }
 
@@ -60,24 +58,18 @@ class JoinRequestServiceTest {
         return JoinRequest.builder().id(5L).user(user).society(requestSociety).build();
     }
 
-    // ---- creating a request ----
-
     @Test
     void createsAPendingRequestWithATrimmedMessage() {
         when(societyRepository.findById(1L)).thenReturn(Optional.of(society));
-
         JoinRequestResponse response = service.create(1L, user, "  I love coding  ");
-
-        Assertions.assertEquals(JoinRequestStatus.PENDING, response.getStatus());
+        assertEquals(JoinRequestStatus.PENDING, response.getStatus());
         assertEquals("I love coding", response.getMessage());
     }
 
     @Test
     void storesNoMessageWhenItIsBlank() {
         when(societyRepository.findById(1L)).thenReturn(Optional.of(society));
-
         JoinRequestResponse response = service.create(1L, user, "   ");
-
         assertNull(response.getMessage());
     }
 
@@ -85,9 +77,7 @@ class JoinRequestServiceTest {
     void membersCannotRequestToJoinAgain() {
         when(societyRepository.findById(1L)).thenReturn(Optional.of(society));
         when(membershipRepository.existsByUserIdAndSocietyId(7L, 1L)).thenReturn(true);
-
         assertThrows(IllegalArgumentException.class, () -> service.create(1L, user, null));
-
         verify(joinRequestRepository, never()).save(any(JoinRequest.class));
     }
 
@@ -95,28 +85,32 @@ class JoinRequestServiceTest {
     void cannotHaveTwoPendingRequestsForOneSociety() {
         when(societyRepository.findById(1L)).thenReturn(Optional.of(society));
         when(joinRequestRepository.existsByUserIdAndSocietyIdAndStatus(7L, 1L, JoinRequestStatus.PENDING)).thenReturn(true);
-
         assertThrows(IllegalArgumentException.class, () -> service.create(1L, user, null));
-
         verify(joinRequestRepository, never()).save(any(JoinRequest.class));
     }
 
     @Test
     void failsForAnUnknownSociety() {
         when(societyRepository.findById(9L)).thenReturn(Optional.empty());
-
         assertThrows(ResourceNotFoundException.class, () -> service.create(9L, user, null));
     }
 
-    // ---- approving and declining ----
+    @Test
+    void rejectsJoinRequestsAcrossColleges() {
+        College otherCollege = mock(College.class);
+        when(otherCollege.getId()).thenReturn(20L);
+        Society otherSociety = mock(Society.class);
+        when(otherSociety.getCollege()).thenReturn(otherCollege);
+        when(societyRepository.findById(2L)).thenReturn(Optional.of(otherSociety));
+        assertThrows(org.springframework.web.server.ResponseStatusException.class, () -> service.create(2L, user, null));
+        verify(joinRequestRepository, never()).save(any(JoinRequest.class));
+    }
 
     @Test
     void approvingAddsThePersonAsAPlainMember() {
         JoinRequest request = pendingRequest(society);
         when(joinRequestRepository.findById(5L)).thenReturn(Optional.of(request));
-
         service.approve(1L, 5L);
-
         ArgumentCaptor<AddMemberRequest> captor = ArgumentCaptor.forClass(AddMemberRequest.class);
         verify(membershipService).addMember(eq(1L), captor.capture());
         assertEquals(7L, captor.getValue().getUserId());
@@ -129,9 +123,7 @@ class JoinRequestServiceTest {
     void decliningDoesNotAddAMembership() {
         JoinRequest request = pendingRequest(society);
         when(joinRequestRepository.findById(5L)).thenReturn(Optional.of(request));
-
         service.decline(1L, 5L);
-
         assertEquals(JoinRequestStatus.DECLINED, request.getStatus());
         assertNotNull(request.getDecidedAt());
         verify(membershipService, never()).addMember(any(), any());
@@ -142,9 +134,7 @@ class JoinRequestServiceTest {
         Society other = mock(Society.class);
         when(other.getId()).thenReturn(2L);
         when(joinRequestRepository.findById(5L)).thenReturn(Optional.of(pendingRequest(other)));
-
         assertThrows(ResourceNotFoundException.class, () -> service.approve(1L, 5L));
-
         verify(membershipService, never()).addMember(any(), any());
     }
 
@@ -153,16 +143,13 @@ class JoinRequestServiceTest {
         JoinRequest request = pendingRequest(society);
         request.setStatus(JoinRequestStatus.DECLINED);
         when(joinRequestRepository.findById(5L)).thenReturn(Optional.of(request));
-
         assertThrows(IllegalArgumentException.class, () -> service.approve(1L, 5L));
-
         verify(membershipService, never()).addMember(any(), any());
     }
 
     @Test
     void anUnknownRequestIsNotFound() {
         when(joinRequestRepository.findById(404L)).thenReturn(Optional.empty());
-
         assertThrows(ResourceNotFoundException.class, () -> service.decline(1L, 404L));
     }
 }

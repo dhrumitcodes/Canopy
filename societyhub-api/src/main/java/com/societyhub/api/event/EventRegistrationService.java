@@ -14,15 +14,16 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class EventRegistrationService {
-
     private final EventRegistrationRepository registrationRepository;
     private final EventRepository eventRepository;
 
     @Transactional
     public RegistrationResponse registerForEvent(Long eventId, User user) {
-        Event event = eventRepository.findById(eventId)
+        Event event = eventRepository.findByIdForUpdate(eventId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
-
+        if (user.getCollege() == null || !user.getCollege().getId().equals(event.getSociety().getCollege().getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only register for events hosted by your college");
+        }
         if (event.getEndTime().isBefore(LocalDateTime.now())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot register for past events");
         }
@@ -32,11 +33,7 @@ public class EventRegistrationService {
         if (registrationRepository.countByEventId(eventId) >= event.getCapacity()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Event is fully booked");
         }
-
-        EventRegistration registration = EventRegistration.builder()
-                .event(event)
-                .user(user)
-                .build();
+        EventRegistration registration = EventRegistration.builder().event(event).user(user).build();
         return RegistrationResponse.fromEntity(registrationRepository.save(registration));
     }
 
@@ -49,18 +46,12 @@ public class EventRegistrationService {
 
     @Transactional(readOnly = true)
     public List<RegistrationResponse> getEventRegistrations(Long eventId) {
-        if (!eventRepository.existsById(eventId)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found");
-        }
-        return registrationRepository.findByEventId(eventId).stream()
-                .map(RegistrationResponse::fromEntity)
-                .toList();
+        if (!eventRepository.existsById(eventId)) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found");
+        return registrationRepository.findByEventId(eventId).stream().map(RegistrationResponse::fromEntity).toList();
     }
 
     @Transactional(readOnly = true)
     public List<RegistrationResponse> getUserRegistrations(User user) {
-        return registrationRepository.findByUserId(user.getId()).stream()
-                .map(RegistrationResponse::fromEntity)
-                .toList();
+        return registrationRepository.findByUserId(user.getId()).stream().map(RegistrationResponse::fromEntity).toList();
     }
 }

@@ -20,10 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -31,18 +28,16 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class EventServiceTest {
-
     @Mock private EventRepository eventRepository;
     @Mock private SocietyRepository societyRepository;
     @Mock private EventRegistrationRepository registrationRepository;
     @Mock private UserRepository userRepository;
     @InjectMocks private EventService service;
-
     private Society society;
 
     @BeforeEach
     void setUp() {
-        SecurityContextHolder.clearContext(); // no signed-in user unless a test says so
+        SecurityContextHolder.clearContext();
         society = mock(Society.class);
         when(society.getId()).thenReturn(1L);
         when(society.getName()).thenReturn("Coding Club");
@@ -50,9 +45,7 @@ class EventServiceTest {
     }
 
     @AfterEach
-    void tearDown() {
-        SecurityContextHolder.clearContext();
-    }
+    void tearDown() { SecurityContextHolder.clearContext(); }
 
     private EventRequest request(Integer capacity) {
         EventRequest r = new EventRequest();
@@ -73,76 +66,60 @@ class EventServiceTest {
         when(societyRepository.findById(1L)).thenReturn(Optional.of(society));
         EventRequest r = request(null);
         r.setEndTime(r.getStartTime().minusHours(1));
-
         ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> service.createEvent(1L, r));
-
         assertEquals(400, ex.getStatusCode().value());
     }
 
     @Test
     void createFailsForAnUnknownSociety() {
         when(societyRepository.findById(9L)).thenReturn(Optional.empty());
-
         ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> service.createEvent(9L, request(null)));
-
         assertEquals(404, ex.getStatusCode().value());
     }
 
     @Test
     void createKeepsTheDefaultCapacityWhenNoneIsSent() {
         when(societyRepository.findById(1L)).thenReturn(Optional.of(society));
-
         EventResponse response = service.createEvent(1L, request(null));
-
         assertEquals(50, response.getCapacity());
     }
 
     @Test
     void createUsesTheRequestedCapacity() {
         when(societyRepository.findById(1L)).thenReturn(Optional.of(society));
-
         EventResponse response = service.createEvent(1L, request(120));
-
         assertEquals(120, response.getCapacity());
     }
 
     @Test
     void updateRefusesACapacityBelowTheNumberAlreadyRegistered() {
-        when(eventRepository.findById(10L)).thenReturn(Optional.of(existingEvent()));
+        when(eventRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(existingEvent()));
         when(registrationRepository.countByEventId(10L)).thenReturn(12L);
-
         ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> service.updateEvent(10L, request(10)));
-
         assertEquals(400, ex.getStatusCode().value());
         assertTrue(ex.getReason().contains("12"));
     }
 
     @Test
     void updateAllowsACapacityEqualToTheRegisteredCount() {
-        when(eventRepository.findById(10L)).thenReturn(Optional.of(existingEvent()));
+        when(eventRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(existingEvent()));
         when(registrationRepository.countByEventId(10L)).thenReturn(12L);
-
         EventResponse response = service.updateEvent(10L, request(12));
-
         assertEquals(12, response.getCapacity());
         assertEquals("Workshop", response.getTitle());
     }
 
     @Test
     void updateKeepsTheCapacityWhenNoneIsSent() {
-        when(eventRepository.findById(10L)).thenReturn(Optional.of(existingEvent()));
-
+        when(eventRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(existingEvent()));
         EventResponse response = service.updateEvent(10L, request(null));
-
         assertEquals(50, response.getCapacity());
     }
 
     @Test
     void deleteFailsForAnUnknownEvent() {
         when(eventRepository.existsById(99L)).thenReturn(false);
-
         ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> service.deleteEvent(99L));
-
         assertEquals(404, ex.getStatusCode().value());
     }
 
@@ -150,9 +127,7 @@ class EventServiceTest {
     void responseCarriesTheRegisteredCountAndNotRegisteredForAnonymousVisitors() {
         when(eventRepository.findById(10L)).thenReturn(Optional.of(existingEvent()));
         when(registrationRepository.countByEventId(10L)).thenReturn(3L);
-
         EventResponse response = service.getEventById(10L);
-
         assertEquals(3L, response.getRegisteredCount());
         assertFalse(response.isRegistered());
     }

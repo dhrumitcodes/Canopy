@@ -1,0 +1,44 @@
+name: Backend tests
+
+on:
+  pull_request:
+    paths:
+      - "societyhub-api/**"
+      - ".github/workflows/backend-tests.yml"
+  push:
+    branches:
+      - main
+      - "fix/backend-rbac-hardening"
+    paths:
+      - "societyhub-api/**"
+      - ".github/workflows/backend-tests.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: societyhub_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: canopy_test_password
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d societyhub_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+      - name: Run backend tests
+        env:
+          TEST_DB_PASSWORD: canopy_test_password
+        run: mvn -B -f societyhub-api/pom.xml test
