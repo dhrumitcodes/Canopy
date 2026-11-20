@@ -40,6 +40,9 @@ public class CollegeController {
         User admin = userRepository.findByEmail(adminEmail)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "The admin must create a normal Canopy account before college onboarding"));
+        if (admin.getCollege() != null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "This account is already assigned to a college");
+        }
         if (admin.getRole() == Role.PLATFORM_ADMIN) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "A platform admin cannot be assigned as a college admin");
         }
