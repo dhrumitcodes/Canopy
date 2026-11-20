@@ -19,7 +19,7 @@ public class Event {
     @Column(name = "start_time", nullable = false) private LocalDateTime startTime;
     @Column(name = "end_time", nullable = false) private LocalDateTime endTime;
     @Column(name = "created_at", updatable = false) @Builder.Default private LocalDateTime createdAt = LocalDateTime.now();
-    @Enumerated(EnumType.STRING) @Column(nullable = false) @Builder.Default private EventStatus status = EventStatus.PENDING;
+    @Enumerated(EnumType.STRING) @Column(nullable = false) @Builder.Default private EventStatus status = EventStatus.APPROVED;
     @Column(name = "review_note", columnDefinition = "TEXT") private String reviewNote;
     @Column(name = "reviewed_at") private LocalDateTime reviewedAt;
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "reviewed_by") private User reviewedBy;
