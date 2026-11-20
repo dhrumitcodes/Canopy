@@ -14,11 +14,9 @@ public class EventRegistrationController {
  private final EventRegistrationService service; private final UserRepository users;
  @PostMapping("/{eventId}/register") public ResponseEntity<RegistrationResponse> register(@PathVariable Long eventId,Authentication a){return ResponseEntity.status(HttpStatus.CREATED).body(service.registerForEvent(eventId,user(a)));}
  @DeleteMapping("/{eventId}/register") public ResponseEntity<Void> cancel(@PathVariable Long eventId,Authentication a){service.cancelRegistration(eventId,user(a));return ResponseEntity.noContent().build();}
- @GetMapping("/{eventId}/attendees") @PreAuthorize("@societySecurity.isSocietyOfficerOrAdmin(@eventService.getEventById(#eventId).societyId)")
- public List<RegistrationResponse> attendees(@PathVariable Long eventId){return service.getEventRegistrations(eventId);}
+ @GetMapping("/{eventId}/attendees") @PreAuthorize("@societySecurity.isSocietyOfficerOrAdmin(@eventService.getEventById(#eventId).societyId)") public List<RegistrationResponse> attendees(@PathVariable Long eventId){return service.getEventRegistrations(eventId);}
  @GetMapping("/my-registrations") public List<RegistrationResponse> mine(Authentication a){return service.getUserRegistrations(user(a));}
- @PostMapping("/check-in") @PreAuthorize("hasAnyRole('SOCIETY_ADMIN','COLLEGE_ADMIN','PLATFORM_ADMIN','MEMBER')")
- public RegistrationResponse checkIn(@RequestBody CheckInRequest body){if(body==null||body.qrToken()==null||body.qrToken().isBlank())throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"QR token is required");return service.checkIn(body.qrToken().trim());}
+ @PostMapping("/check-in") @PreAuthorize("isAuthenticated()") public RegistrationResponse checkIn(@RequestBody CheckInRequest body,Authentication a){if(body==null||body.qrToken()==null||body.qrToken().isBlank())throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"QR token is required");return service.checkIn(body.qrToken().trim(),user(a));}
  private User user(Authentication a){return users.findByEmail(a.getName()).orElseThrow(()->new ResponseStatusException(HttpStatus.UNAUTHORIZED,"User not found"));}
  public record CheckInRequest(String qrToken){}
 }
