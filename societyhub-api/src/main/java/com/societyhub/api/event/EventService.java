@@ -39,12 +39,13 @@ public class EventService {
    .and(EventSpecification.titleContains(search)).and(EventSpecification.locationContains(location)).and(EventSpecification.isUpcoming(upcoming));
   if(user!=null&&user.getRole()==Role.PLATFORM_ADMIN)spec=Specification.where(EventSpecification.hasSocietyId(societyId)).and(EventSpecification.titleContains(search)).and(EventSpecification.locationContains(location)).and(EventSpecification.isUpcoming(upcoming));
   if(user==null||user.getRole()!=Role.COLLEGE_ADMIN&&user.getRole()!=Role.PLATFORM_ADMIN)
-   spec=spec.and((root,q,cb)->cb.equal(root.get("status"),EventStatus.APPROVED));
+   Long viewerId=user==null?null:user.getId();
+   spec=spec.and((root,q,cb)->cb.or(cb.equal(root.get("status"),EventStatus.APPROVED),viewerId==null?cb.disjunction():cb.equal(root.get("createdBy").get("id"),viewerId)));
   return eventRepository.findAll(spec,pageable).map(e->toResponse(e,user==null?null:user.getId()));
  }
  @Transactional(readOnly=true) public EventResponse getEventById(Long eventId){
   Event e=eventRepository.findById(eventId).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Event not found"));
-  User u=currentUser(); if(e.getStatus()!=EventStatus.APPROVED && (u==null||!canReview(u,e))) throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Event not found");
+  User u=currentUser(); if(e.getStatus()!=EventStatus.APPROVED && (u==null||!canReview(u,e)&&!u.getId().equals(e.getCreatedBy()==null?null:e.getCreatedBy().getId()))) throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Event not found");
   return toResponse(e,u==null?null:u.getId());
  }
  @Transactional public EventResponse updateEvent(Long eventId,EventRequest request){
