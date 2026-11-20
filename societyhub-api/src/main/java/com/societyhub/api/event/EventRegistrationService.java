@@ -19,7 +19,7 @@ public class EventRegistrationService {
 
     @Transactional
     public RegistrationResponse registerForEvent(Long eventId, User user) {
-        Event event = eventRepository.findById(eventId)
+        Event event = eventRepository.findByIdForUpdate(eventId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
         if (user.getCollege() == null || !user.getCollege().getId().equals(event.getSociety().getCollege().getId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only register for events hosted by your college");
