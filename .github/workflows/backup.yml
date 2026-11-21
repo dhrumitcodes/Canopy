@@ -2,12 +2,16 @@ name: Database backup
 
 on:
   schedule:
-    - cron: "0 21 * * *"   # every day at 21:00 UTC
+    - cron: "0 21 * * *"
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   backup:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Validate backup secrets
         env:
@@ -27,20 +31,32 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
         run: |
+          set -euo pipefail
+          umask 077
           docker run --rm -e DATABASE_URL postgres:17-alpine \
             sh -c 'pg_dump "$DATABASE_URL" --no-owner --format=custom' > backup.dump
+          test -s backup.dump
+          docker run --rm -v "$PWD:/backup:ro" postgres:17-alpine \
+            pg_restore --list /backup/backup.dump > backup.contents.txt
+          test -s backup.contents.txt
 
-      - name: Encrypt the dump
+      - name: Encrypt and verify the backup
         env:
           BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
         run: |
-          gpg --batch --yes --passphrase "$BACKUP_PASSPHRASE" \
+          set -euo pipefail
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$BACKUP_PASSPHRASE" \
             --symmetric --cipher-algo AES256 -o backup.dump.gpg backup.dump
-          rm backup.dump
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$BACKUP_PASSPHRASE" \
+            --decrypt --output backup-verified.dump backup.dump.gpg
+          docker run --rm -v "$PWD:/backup:ro" postgres:17-alpine \
+            pg_restore --list /backup/backup-verified.dump > /dev/null
+          rm -f backup.dump backup-verified.dump backup.contents.txt
 
       - name: Keep the encrypted backup for 14 days
         uses: actions/upload-artifact@v4
         with:
           name: db-backup-${{ github.run_number }}
           path: backup.dump.gpg
+          if-no-files-found: error
           retention-days: 14
