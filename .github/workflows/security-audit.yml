@@ -31,7 +31,18 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
-          build-mode: ${{ matrix.language == 'java-kotlin' && 'autobuild' || 'none' }}
+          build-mode: ${{ matrix.language == 'java-kotlin' && 'manual' || 'none' }}
+      - name: Set up Java 17
+        if: matrix.language == 'java-kotlin'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+          cache-dependency-path: societyhub-api/pom.xml
+      - name: Build backend for CodeQL
+        if: matrix.language == 'java-kotlin'
+        run: mvn -B -f societyhub-api/pom.xml -DskipTests -Dmaven.compiler.proc=full package
       - name: Analyze
         uses: github/codeql-action/analyze@v3
         with:

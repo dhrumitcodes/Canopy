@@ -25,29 +25,25 @@ class EventFeedbackServiceTest {
  @Mock EventFeedbackRepository feedback;
  @Mock SocietySecurityEvaluator security;
  @InjectMocks EventFeedbackService service;
-
  private Event event(LocalDateTime end) {
-  Society society=mock(Society.class); when(society.getId()).thenReturn(8L);
+  Society society=Society.builder().id(8L).name("Robotics Club").build();
   return Event.builder().id(4L).title("Design Sprint").society(society).status(EventStatus.APPROVED).endTime(end).build();
  }
  private User user(){return User.builder().id(12L).fullName("Attendee").email("a@college.edu").build();}
  private FeedbackRequest request(){return new FeedbackRequest(5,"Great event");}
-
  @Test void rejectsFeedbackBeforeEventEnds(){
-  when(events.findById(4L)).thenReturn(Optional.of(event(LocalDateTime.now().plusHours(1))));
+  Event e=event(LocalDateTime.now().plusHours(1)); when(events.findById(4L)).thenReturn(Optional.of(e));
   ResponseStatusException ex=assertThrows(ResponseStatusException.class,()->service.submit(4L,user(),request()));
-  assertEquals(409,ex.getStatusCode().value()); verifyNoInteractions(feedback);
+  assertEquals(409,ex.getStatusCode().value()); verifyNoInteractions(registrations,feedback);
  }
  @Test void requiresARegistrationAndVerifiedCheckIn(){
-  when(events.findById(4L)).thenReturn(Optional.of(event(LocalDateTime.now().minusMinutes(1))));
-  EventRegistration registration=EventRegistration.builder().id(2L).event(event(LocalDateTime.now().minusMinutes(1))).user(user()).build();
-  when(registrations.findByEventIdAndUserId(4L,12L)).thenReturn(Optional.of(registration));
-  ResponseStatusException ex=assertThrows(ResponseStatusException.class,()->service.submit(4L,user(),request()));
+  Event e=event(LocalDateTime.now().minusMinutes(1)); User u=user(); when(events.findById(4L)).thenReturn(Optional.of(e));
+  when(registrations.findByEventIdAndUserId(4L,12L)).thenReturn(Optional.of(EventRegistration.builder().id(2L).event(e).user(u).build()));
+  ResponseStatusException ex=assertThrows(ResponseStatusException.class,()->service.submit(4L,u,request()));
   assertEquals(403,ex.getStatusCode().value()); verifyNoInteractions(feedback);
  }
  @Test void savesFeedbackForARegisteredAttendeeWhoCheckedIn(){
-  Event e=event(LocalDateTime.now().minusMinutes(1)); User u=user();
-  when(events.findById(4L)).thenReturn(Optional.of(e));
+  Event e=event(LocalDateTime.now().minusMinutes(1)); User u=user(); when(events.findById(4L)).thenReturn(Optional.of(e));
   when(registrations.findByEventIdAndUserId(4L,12L)).thenReturn(Optional.of(EventRegistration.builder().id(2L).event(e).user(u).checkedInAt(LocalDateTime.now().minusHours(1)).build()));
   when(feedback.findByEventIdAndUserId(4L,12L)).thenReturn(Optional.empty());
   when(feedback.save(any(EventFeedback.class))).thenAnswer(inv->inv.getArgument(0));
