@@ -31,22 +31,8 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
-          build-mode: autobuild
+          build-mode: ${{ matrix.language == 'java-kotlin' && 'autobuild' || 'none' }}
       - name: Analyze
         uses: github/codeql-action/analyze@v3
         with:
           category: "/language:${{ matrix.language }}"
-
-  dependency-review:
-    name: Dependency review
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: read
-    steps:
-      - uses: actions/checkout@v4
-      - name: Review dependency changes
-        uses: actions/dependency-review-action@v4
-        with:
-          fail-on-severity: high

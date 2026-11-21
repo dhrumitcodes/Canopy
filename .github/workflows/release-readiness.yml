@@ -56,6 +56,9 @@ jobs:
         working-directory: societyweb
       - run: npm run build
         working-directory: societyweb
+      - name: Audit production npm dependencies
+        run: npm audit --omit=dev --audit-level=high
+        working-directory: societyweb
 
   containers:
     name: Production container builds
