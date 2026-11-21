@@ -1,0 +1,75 @@
+name: Release readiness
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend tests (PostgreSQL)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: societyhub_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: canopy_test_password
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d societyhub_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+      - name: Run migrations and backend tests
+        env:
+          TEST_DB_PASSWORD: canopy_test_password
+        run: mvn -B -f societyhub-api/pom.xml verify
+
+  frontend:
+    name: Frontend lint and production build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: societyweb/package-lock.json
+      - run: npm ci
+        working-directory: societyweb
+      - run: npm run lint
+        working-directory: societyweb
+      - run: npm run build
+        working-directory: societyweb
+
+  containers:
+    name: Production container builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Compose configuration
+        env:
+          POSTGRES_PASSWORD: ci-only-placeholder-password
+          JWT_SECRET: Y2ktb25seS1wbGFjZWhvbGRlci1zZWNyZXQtdmFsdWUtZm9yLWNvbXBvc2UtdmFsaWRhdGlvbg==
+          WEB_ORIGIN: https://canopy.example.invalid
+          API_PUBLIC_URL: https://api.canopy.example.invalid/api/v1
+        run: docker compose config --quiet
+      - name: Build API image
+        run: docker build --tag canopy-api:ci ./societyhub-api
+      - name: Build frontend image
+        run: docker build --build-arg VITE_API_BASE_URL=https://api.canopy.example.invalid/api/v1 --tag canopy-web:ci ./societyweb
