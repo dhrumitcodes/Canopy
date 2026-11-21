@@ -127,7 +127,7 @@ Recommended separation:
 
 1. Create a Neon project and database.
 2. Copy the connection details from the Neon Console.
-3. For this long-running Spring Boot service, start with the **direct** PostgreSQL connection string (hostname without `-pooler`). The API uses HikariCP and Flyway runs migrations at startup; keep a direct connection for migration compatibility. Use TLS by retaining `sslmode=require`.
+3. For this Spring Boot service, use the **direct/unpooled** PostgreSQL connection string (hostname without `-pooler`) initially because Flyway runs schema migrations at application startup; Neon documents direct connections for migrations and backup/restore tools. Keep `sslmode=require`. The API currently uses a small HikariCP pool (maximum 5 connections). If you later separate migrations from application startup and move to pooled runtime traffic, test PgBouncer transaction-pooling compatibility before switching to the pooled endpoint.
 4. Convert the connection string to JDBC form for Spring. For example:
 
 ```text
